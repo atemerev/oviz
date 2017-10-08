@@ -1,12 +1,22 @@
+body {
+    background-color: black;
+    color: #EEEEEE;
+}
+
+svg {
+    fill: #EEEEEE;
+    stroke: #EEEEEE;
+}
+
 .axis text,
 .tick text {
-    font-size: 5pt;
+    font-size: 8pt;
     font-family: sans-serif;
 }
 
 .axis path,
 .axis line {
     fill: none;
-    stroke: #000;
+    stroke: #EEEEEE;
     shape-rendering: crispEdges;
 }

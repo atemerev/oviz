@@ -10,7 +10,6 @@ function main() {
     const bidVolumeAxis = mkAxis(topScale).ticks(4).tickFormat(d3.format(",d"));
     const offerVolumeAxis = mkAxis(bottomScale).ticks(4).tickFormat(d3.format(",d"));
 
-
     svg.append("g")
         .attr("class", "y1 axis").attr("transform", "translate(" + (width - 50) + ", " + 10 + ")")
         .call(bidVolumeAxis);
@@ -18,6 +17,8 @@ function main() {
     svg.append("g")
         .attr("class", "y2 axis").attr("transform", "translate(" + (width - 50) + ", " + (height / 2 + 10) + ")")
         .call(offerVolumeAxis);
+
+    removeZeroTicks(svg);
 }
 
 function prepareSvg(id, width, height) {
@@ -27,11 +28,17 @@ function prepareSvg(id, width, height) {
 }
 
 function mkAxis(scale) {
-    return d3.axisRight(scale);
+    return d3.axisRight(scale).tickSizeOuter(0);
 }
 
 function createVolumeScale(minVolume, maxVolume, minScale, maxScale) {
     return d3.scaleLog().domain([minVolume, maxVolume]).range([maxScale, minScale]);
+}
+
+function removeZeroTicks(svg) {
+    svg.selectAll(".tick")
+        .filter(function (d) { return d === 1;  })
+        .remove();
 }
 
 main();
