@@ -1,11 +1,11 @@
 body {
     background-color: black;
-    color: #EEEEEE;
+    color: #DADADA;
 }
 
 svg {
-    fill: #EEEEEE;
-    stroke: #EEEEEE;
+    fill: #DADADA;
+    stroke: #DADADA;
 }
 
 .axis text,
@@ -15,8 +15,20 @@ svg {
 }
 
 .axis path,
-.axis line {
+.axis line
+{
     fill: none;
-    stroke: #EEEEEE;
+    stroke: #DADADA;
     shape-rendering: crispEdges;
+}
+
+.mid text {
+    font-size: 9pt;
+    font-family: sans-serif;
+}
+
+line.tamp
+{
+    fill: none;
+    stroke: #DADADA;
 }
