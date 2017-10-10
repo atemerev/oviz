@@ -1,0 +1,14 @@
+*.iml
+*.ipr
+*.iws
+.idea/
+target/
+project/target
+.js/target
+.js/idea-shared-main
+.js/idea-shared-test
+.jvm/target
+.jvm/idea-shared-main
+.jvm/idea-shared-test
+bintray_credentials.properties
+.DS_Store
