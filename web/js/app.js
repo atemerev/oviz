@@ -1,6 +1,8 @@
 function main() {
     const book = getSampleOrderBook();
 
+    const margin = {top: 20, right: 10, bottom: 20, left: 10};
+
     const width = 500;
     const height = 200;
 
