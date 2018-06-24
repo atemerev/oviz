@@ -3,11 +3,18 @@ body {
     color: #DADADA;
 }
 
+#chart {
+    width: 100%;
+}
+
 svg {
+    width: 100%;
+    height: 400px;
     fill: #DADADA;
     stroke: #DADADA;
 }
 
+/*
 .axis text,
 .tick text {
     font-size: 8pt;
@@ -27,8 +34,12 @@ svg {
     font-family: sans-serif;
 }
 
-line.tamp
-{
+line.tamp {
     fill: none;
     stroke: #DADADA;
 }
+
+rect.price {
+    fill: #DADADA;
+    stroke: none;
+}*/
