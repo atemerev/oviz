@@ -26,3 +26,12 @@ svg {
     stroke: #DADADA;
     shape-rendering: crispEdges;
 }
+
+.buy {
+    fill: #DADADA;
+    stroke: #DADADA;
+}
+
+.divider {
+    stroke: #444444;
+}

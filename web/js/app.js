@@ -3,7 +3,9 @@ let conf = {
     timeResMs: 100,
     timeAxisHeight: 50,
     symbol: "XBTUSD",
-    bucketMs: 5
+    bucketMs: 5,
+    barWidth: 2,
+    barMargin: 10
 }
 
 let trades = []
@@ -12,14 +14,53 @@ let main = () => {
     let now = new Date()
     let span = conf.timeSpanS // seconds
     let svg = prepareSvg("#chart", "chart-flow")
-    let scale = mkTimeScale(svg, now, span)
-    let axis = mkTimeAxis(scale)
+    let bbox = svg.node().getBoundingClientRect()
+    let timeScale = mkTimeScale(svg, now, span)
+    let amountScale = mkAmountScale(svg)
+    let axis = mkTimeAxis(timeScale)
     renderTimeAxis(svg, axis)
+    renderDivider(svg)
+    let buyG = svg.append("g").attr("class", "buys").attr("transform", "translate(" + 0 + "," + (bbox.height - conf.timeAxisHeight) / 2 + ")")
     window.setInterval(() => {
-        let update = () => updateTimeAxis(span)
+        let update = () => {
+            let scale = updateTimeAxis(span)
+            drawTrades(buyG, trades, scale, amountScale)
+        }
         requestAnimationFrame(update)
     }, conf.timeResMs)
-    connectWs((data) => onWsMessage(JSON.parse(data)))
+    connectWs((data) => {
+        onWsMessage(JSON.parse(data))
+    })
+}
+
+let drawTrades = (g, trades, timeScale, amountScale) => {
+    let t = d3.transition()
+        .duration(conf.timeResMs)
+        .ease(d3.easeLinear)
+    let w = conf.barWidth
+    let bars = g.selectAll(".buy")
+        .data(trades, (t) => t[0])
+
+    bars.exit().remove()
+
+    bars.enter()
+        .append("rect")
+        .attr("class", "buy")
+        .attr("y", (d) => d[1] > 0 ? -amountScale(Math.abs(d[1])) : 0)
+        .attr("width", w)
+        .attr("height", (d) => {
+            console.log(amountScale(d[1]))
+            return amountScale(Math.abs(d[1]))
+        })
+        .attr("x", (d) => {
+            // console.log(d[0]);
+            return timeScale(new Date(d[0])) - w / 2
+        })
+        .merge(bars)
+        .transition(t)
+        .attr("x", (d) => {
+            return timeScale(new Date(d[0])) - w / 2
+        })
 }
 
 let onWsMessage = (data) => {
@@ -99,6 +140,20 @@ let updateTimeAxis = (span) => {
         .duration(conf.timeResMs)
         .ease(d3.easeLinear)
     svg.select(".time").transition(t).call(axis)
+    return scale
+}
+
+let renderDivider = (svg) => {
+    let bbox = svg.node().getBoundingClientRect()
+    let y = (bbox.height - conf.timeAxisHeight) / 2
+    svg.append("g")
+        .attr("class", "divider")
+        .attr("transform", "translate(" + 0 + ", " + y + ")")
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", bbox.width)
+        .attr("y2", 0)
 }
 
 let renderTimeAxis = (svg, axis) => {
@@ -116,6 +171,12 @@ let mkTimeScale = (svg, currentTime, spanInterval) => {
     let to = currentTime
     let scale = d3.scaleTime().domain([from, to]).range([0, bbox.width])
     return scale
+}
+
+let mkAmountScale = (svg) => {
+    let bbox = svg.node().getBoundingClientRect()
+    let vSpan = (bbox.height - conf.timeAxisHeight) / 2
+    return d3.scaleLog().clamp(true).domain([1, 200000]).range([0, vSpan - conf.barMargin])
 }
 
 let mkTimeAxis = (scale) => {
