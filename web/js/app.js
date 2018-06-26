@@ -4,8 +4,9 @@ let conf = {
     timeAxisHeight: 50,
     symbol: "XBTUSD",
     bucketMs: 5,
-    barWidth: 2,
-    barMargin: 10
+    barWidth: 1,
+    barMargin: 0,
+    amountAxisWidth: 55
 }
 
 let trades = []
@@ -16,10 +17,14 @@ let main = () => {
     let svg = prepareSvg("#chart", "chart-flow")
     let bbox = svg.node().getBoundingClientRect()
     let timeScale = mkTimeScale(svg, now, span)
-    let amountScale = mkAmountScale(svg)
+    let amountScale = mkAmountScale(svg, false)
+    let invAmountScale = mkAmountScale(svg, true)
     let axis = mkTimeAxis(timeScale)
-    renderTimeAxis(svg, axis)
+    renderBackground(svg)
     renderDivider(svg)
+    renderTimeAxis(svg, axis)
+    renderVolumeAxis(svg, "offer", invAmountScale, 4, bbox.width - conf.amountAxisWidth, conf.barMargin)
+    renderVolumeAxis(svg, "bid", amountScale, 4, bbox.width - conf.amountAxisWidth, (bbox.height - conf.timeAxisHeight) / 2)
     let buyG = svg.append("g").attr("class", "buys").attr("transform", "translate(" + 0 + "," + (bbox.height - conf.timeAxisHeight) / 2 + ")")
     window.setInterval(() => {
         let update = () => {
@@ -38,19 +43,18 @@ let drawTrades = (g, trades, timeScale, amountScale) => {
         .duration(conf.timeResMs)
         .ease(d3.easeLinear)
     let w = conf.barWidth
-    let bars = g.selectAll(".buy")
+    let bars = g.selectAll(".bar")
         .data(trades, (t) => t[0])
 
     bars.exit().remove()
 
     bars.enter()
         .append("rect")
-        .attr("class", "buy")
-        .attr("y", (d) => d[1] > 0 ? -amountScale(Math.abs(d[1])) : 0)
+        .attr("class", (d) => d[1] > 0 ? "bar buy" : "bar sell")
+        .attr("y", (d) => d[1] > 0 ? -amountScale(Math.abs(d[1])) + 1 : 1)
         .attr("width", w)
         .attr("height", (d) => {
-            console.log(amountScale(d[1]))
-            return amountScale(Math.abs(d[1]))
+            return amountScale(Math.abs(d[1])) - 1
         })
         .attr("x", (d) => {
             // console.log(d[0]);
@@ -143,6 +147,26 @@ let updateTimeAxis = (span) => {
     return scale
 }
 
+let renderBackground = (svg) => {
+    let bbox = svg.node().getBoundingClientRect()
+    let mid = (bbox.height - conf.timeAxisHeight) / 2
+    svg.append("g")
+        .append("rect")
+        .attr("class", "top-bg")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", bbox.width - conf.amountAxisWidth)
+        .attr("height", mid)
+    svg.append("g")
+        .append("rect")
+        .attr("class", "bottom-bg")
+        .attr("x", 0)
+        .attr("y", mid)
+        .attr("width", bbox.width - conf.amountAxisWidth)
+        .attr("height", mid)
+
+}
+
 let renderDivider = (svg) => {
     let bbox = svg.node().getBoundingClientRect()
     let y = (bbox.height - conf.timeAxisHeight) / 2
@@ -152,7 +176,7 @@ let renderDivider = (svg) => {
         .append("line")
         .attr("x1", 0)
         .attr("y1", 0)
-        .attr("x2", bbox.width)
+        .attr("x2", bbox.width - conf.amountAxisWidth)
         .attr("y2", 0)
 }
 
@@ -169,18 +193,41 @@ let mkTimeScale = (svg, currentTime, spanInterval) => {
     let bbox = svg.node().getBoundingClientRect()
     let from = new Date(currentTime.getTime() - spanInterval * 1000)
     let to = currentTime
-    let scale = d3.scaleTime().domain([from, to]).range([0, bbox.width])
+    let scale = d3.scaleTime().domain([from, to]).range([0, bbox.width - conf.amountAxisWidth])
     return scale
 }
 
-let mkAmountScale = (svg) => {
+let mkAmountScale = (svg, inverted) => {
     let bbox = svg.node().getBoundingClientRect()
     let vSpan = (bbox.height - conf.timeAxisHeight) / 2
-    return d3.scaleLog().clamp(true).domain([1, 200000]).range([0, vSpan - conf.barMargin])
+    let range = inverted === true ? [vSpan - conf.barMargin, 0] : [0, vSpan - conf.barMargin]
+    return d3.scaleLog().clamp(true).domain([1, 200000]).range(range)
+}
+
+let mkAmountAxis = (scale) => {
+    let svg = d3.select("svg")
+    let bbox = svg.node().getBoundingClientRect()
+    return d3.axisRight(scale).tickSize(-bbox.width + conf.amountAxisWidth, 0, 0)
 }
 
 let mkTimeAxis = (scale) => {
-    return d3.axisBottom(scale).tickSizeOuter(0)
+    let svg = d3.select("svg")
+    let bbox = svg.node().getBoundingClientRect()
+    return d3.axisBottom(scale).tickSizeOuter(5).tickSize(-bbox.height + conf.timeAxisHeight, 0, 0)
+}
+
+let renderVolumeAxis = (svg, name, scale, ticks, x, y) => {
+    const volumeAxis = mkAmountAxis(scale).ticks(ticks).tickFormat(d3.format(",d"))
+    let g = svg.append("g")
+        .attr("class", name + " axis").attr("transform", "translate(" + x + ", " + y + ")")
+        .call(volumeAxis)
+    removeZeroTicks(g, 1)
+}
+
+let removeZeroTicks = (svg, val) => {
+    svg.selectAll(".tick")
+        .filter(function (d) { return d === val;  })
+        .remove();
 }
 
 main()
